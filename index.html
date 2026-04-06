@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Encontre sua moto ideal nas melhores lojas. Motos seminovas e 0km com os melhores preços." />
+  <title>MotoShop — As Melhores Motos</title>
+
+  <!-- Firebase SDK v9 Compat (CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    /* ── Layout do Index ── */
+    #firebase-warning { display: none; }
+
+    /* Header */
+    .site-header {
+      background: linear-gradient(180deg, #000 0%, var(--bg-deepest) 100%);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--orange);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .logo-text {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      color: var(--text-primary);
+    }
+
+    .logo-text span { color: var(--orange); }
+
+    .stores-nav {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .store-pill {
+      padding: 5px 14px;
+      border-radius: 100px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .store-pill:hover,
+    .store-pill.active {
+      background: var(--orange-dim);
+      border-color: rgba(255,107,0,0.4);
+      color: var(--orange);
+    }
+
+    /* Hero */
+    .hero {
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(255,107,0,0.18) 0%, transparent 70%),
+        var(--bg-deepest);
+      padding: 60px 24px 48px;
+      text-align: center;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 16px;
+    }
+
+    .hero-eyebrow::before,
+    .hero-eyebrow::after {
+      content: '';
+      width: 28px;
+      height: 2px;
+      background: var(--orange);
+    }
+
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 72px);
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      line-height: 1.0;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
+    .hero h1 em {
+      font-style: normal;
+      color: var(--orange);
+    }
+
+    .hero p {
+      color: var(--text-secondary);
+      font-size: 16px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* Filtros */
+    .filters-section {
+      background: var(--bg-dark);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 24px;
+      position: sticky;
+      top: 70px;
+      z-index: 90;
+    }
+
+    .filters-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .filter-group label {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .filter-group select,
+    .filter-group input[type="number"] {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 14px;
+      padding: 9px 12px;
+      height: 40px;
+    }
+
+    /* Slider de Preço */
+    .price-slider-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .price-slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .price-slider-labels strong {
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      font-size: 13px;
+    }
+
+    .range-slider-container {
+      position: relative;
+      height: 28px;
+      margin-top: 6px;
+    }
+
+    .range-slider-container input[type="range"] {
+      position: absolute;
+      width: 100%;
+      height: 28px;
+      background: transparent;
+      pointer-events: none;
+      appearance: none;
+      -webkit-appearance: none;
+      padding: 0;
+      border: none;
+      box-shadow: none;
+      top: 0;
+      left: 0;
+      margin: 0;
+    }
+
+    .range-slider-container input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--orange);
+      border: 2px solid var(--bg-deepest);
+      pointer-events: all;
+      cursor: pointer;
+      box-shadow: 0 0 6px var(--orange-glow);
+    }
+
+    .range-slider-container input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--orange);
+      border: 2px solid var(--bg-deepest);
+      pointer-events: all;
+      cursor: pointer;
+      box-shadow: 0 0 6px var(--orange-glow);
+    }
+
+    #slider-track {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    #slider-fill {
+      position: absolute;
+      height: 4px;
+      background: var(--orange);
+      border-radius: 2px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .filter-btn-group {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .btn-filter-clear {
+      height: 40px;
+      padding: 0 16px;
+      font-size: 13px;
+    }
+
+    /* Grid de Motos */
+    .catalog-section {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    .catalog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .catalog-count {
+      font-family: var(--font-display);
+      font-size: 16px;
+      color: var(--text-secondary);
+    }
+
+    .catalog-count span {
+      color: var(--orange);
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .sort-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .sort-group select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-size: 13px;
+      padding: 7px 28px 7px 10px;
+      height: 36px;
+      width: auto;
+      border-radius: var(--radius-sm);
+    }
+
+    /* Cards Grid */
+    #motos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    /* Card de Moto */
+    .moto-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: var(--transition-slow);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .moto-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255,107,0,0.3);
+      box-shadow: var(--shadow-hover), 0 0 0 1px rgba(255,107,0,0.15);
+    }
+
+    .card-img-wrap {
+      position: relative;
+      width: 100%;
+      padding-top: 66%;
+      background: var(--bg-dark);
+      overflow: hidden;
+    }
+
+    .card-img-wrap img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .moto-card:hover .card-img-wrap img {
+      transform: scale(1.06);
+    }
+
+    .card-store-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 100px;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+      padding: 4px 10px;
+    }
+
+    .card-km-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+    }
+
+    .card-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 10px;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-brand {
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--orange);
+    }
+
+    .card-year {
+      font-family: var(--font-display);
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .card-name {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .card-info {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .card-info-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .card-info-item svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      opacity: 0.6;
+    }
+
+    .card-footer {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .card-price {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .card-price small {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .btn-whatsapp {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: #25D366;
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 10px 16px;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .btn-whatsapp:hover {
+      background: #20BA5A;
+      transform: scale(1.03);
+      box-shadow: 0 4px 16px rgba(37,211,102,0.35);
+    }
+
+    .btn-whatsapp svg { width: 18px; height: 18px; }
+
+    /* Skeleton Cards */
+    .skeleton-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .skeleton-img {
+      width: 100%;
+      padding-top: 66%;
+      position: relative;
+    }
+
+    .skeleton-img .skeleton {
+      position: absolute;
+      inset: 0;
+    }
+
+    .skeleton-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .skeleton-line {
+      height: 14px;
+      border-radius: 4px;
+    }
+
+    /* Ver Mais */
+    .load-more-wrap {
+      text-align: center;
+      margin-top: 40px;
+    }
+
+    .btn-load-more {
+      padding: 14px 48px;
+      font-size: 16px;
+    }
+
+    .load-more-count {
+      display: block;
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Estado vazio */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 80px 20px;
+    }
+
+    .empty-state .empty-icon {
+      font-size: 56px;
+      margin-bottom: 16px;
+    }
+
+    .empty-state h3 {
+      font-size: 24px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--bg-dark);
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 60px;
+    }
+
+    footer strong { color: var(--orange); }
+
+    /* Responsivo */
+    @media (max-width: 768px) {
+      .stores-nav { display: none; }
+      .hero { padding: 40px 20px 32px; }
+      .filters-section { top: 70px; }
+      .filters-inner { gap: 10px; }
+      .filter-group { min-width: 100%; }
+      .price-slider-wrap { min-width: 100%; }
+      .filter-btn-group { width: 100%; }
+      .filter-btn-group .btn { flex: 1; }
+      .catalog-section { padding: 20px 16px; }
+      #motos-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    }
+
+    @media (max-width: 480px) {
+      #motos-grid { grid-template-columns: 1fr; }
+      .card-footer { flex-direction: column; align-items: flex-start; }
+      .btn-whatsapp { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Firebase Warning (exibido se config vazia) -->
+  <div id="firebase-warning">
+    <div class="firebase-warning-box">
+      <div class="icon">⚙️</div>
+      <h2>Configure o Firebase</h2>
+      <p>O site precisa do Firebase para funcionar. Siga os passos abaixo:</p>
+      <ol>
+        <li>Acesse <strong>console.firebase.google.com</strong></li>
+        <li>Crie um projeto e ative <strong>Firestore, Storage e Auth</strong></li>
+        <li>Vá em Configurações → Aplicativos → Web → copie as credenciais</li>
+        <li>Cole as credenciais no arquivo <code>firebase.config.js</code></li>
+        <li>Recarregue a página</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">🏍</div>
+        <div class="logo-text">Moto<span>Shop</span></div>
+      </div>
+      <nav class="stores-nav" aria-label="Lojas">
+        <button class="store-pill active" data-store="">Todas as Lojas</button>
+        <button class="store-pill" data-store="Moto Shop A">Moto Shop A</button>
+        <button class="store-pill" data-store="Moto Shop B">Moto Shop B</button>
+        <button class="store-pill" data-store="Moto Shop C">Moto Shop C</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero" role="banner">
+    <p class="hero-eyebrow">Seminovas & 0km</p>
+    <h1>Encontre sua <em>moto ideal</em></h1>
+    <p>Motos de qualidade com os melhores preços. Atendimento pelo WhatsApp.</p>
+  </section>
+
+  <!-- Filtros -->
+  <section class="filters-section" aria-label="Filtros">
+    <div class="filters-inner">
+
+      <div class="filter-group">
+        <label for="filter-store">Loja</label>
+        <select id="filter-store">
+          <option value="">Todas as lojas</option>
+          <option value="Moto Shop A">Moto Shop A</option>
+          <option value="Moto Shop B">Moto Shop B</option>
+          <option value="Moto Shop C">Moto Shop C</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-brand">Marca</label>
+        <select id="filter-brand">
+          <option value="">Todas as marcas</option>
+          <option>Honda</option>
+          <option>Yamaha</option>
+          <option>Kawasaki</option>
+          <option>Suzuki</option>
+          <option>BMW</option>
+          <option>Ducati</option>
+          <option>Harley-Davidson</option>
+          <option>Dafra</option>
+          <option>Shineray</option>
+          <option>Traxx</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-year-min">Ano</label>
+        <div class="flex gap-8">
+          <select id="filter-year-min" style="min-width:90px"></select>
+          <select id="filter-year-max" style="min-width:90px"></select>
+        </div>
+      </div>
+
+      <div class="price-slider-wrap">
+        <label>Preço</label>
+        <div class="price-slider-labels">
+          <span>De: <strong id="price-min-label">R$ 0</strong></span>
+          <span>Até: <strong id="price-max-label">R$ 200.000</strong></span>
+        </div>
+        <div class="range-slider-container">
+          <div id="slider-track"></div>
+          <div id="slider-fill"></div>
+          <input type="range" id="price-min" min="0" max="200000" step="1000" value="0" aria-label="Preço mínimo" />
+          <input type="range" id="price-max" min="0" max="200000" step="1000" value="200000" aria-label="Preço máximo" />
+        </div>
+      </div>
+
+      <div class="filter-btn-group">
+        <button class="btn btn-ghost btn-filter-clear" id="btn-clear-filters">Limpar</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Catálogo -->
+  <main class="catalog-section" id="catalogo">
+    <div class="catalog-header">
+      <p class="catalog-count"><span id="count-display">—</span> motos encontradas</p>
+      <div class="sort-group">
+        <label for="sort-select">Ordenar:</label>
+        <select id="sort-select">
+          <option value="recente">Mais recentes</option>
+          <option value="preco-asc">Menor preço</option>
+          <option value="preco-desc">Maior preço</option>
+          <option value="ano-desc">Ano mais novo</option>
+          <option value="ano-asc">Ano mais antigo</option>
+          <option value="km-asc">Menor km</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="motos-grid" role="list" aria-label="Lista de motos"></div>
+
+    <div class="load-more-wrap" id="load-more-wrap" style="display:none">
+      <button class="btn btn-outline btn-load-more" id="btn-load-more">
+        Ver Mais Motos
+      </button>
+      <small class="load-more-count" id="load-more-count"></small>
+    </div>
+  </main>
+
+  <!-- Toast Container -->
+  <div id="toast-container" role="region" aria-live="polite" aria-label="Notificações"></div>
+
+  <footer>
+    <p>© 2026 <strong>MotoShop</strong> — Moto Shop A · Moto Shop B · Moto Shop C</p>
+    <p style="margin-top:6px">Seu próximo veículo está aqui.</p>
+  </footer>
+
+  <script src="firebase.config.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // Inicializa módulo do cliente
+    if (typeof initClientPage === 'function') initClientPage();
+  </script>
+</body>
+</html>

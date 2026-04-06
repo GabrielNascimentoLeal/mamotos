@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — MotoShop</title>
+  <meta name="robots" content="noindex, nofollow" />
+
+  <!-- Firebase SDK v9 Compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    /* ── Admin Layout ── */
+    body { background: var(--bg-deepest); }
+
+    /* LOGIN SCREEN */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% -5%, rgba(255,107,0,0.12) 0%, transparent 70%),
+        var(--bg-deepest);
+    }
+
+    .login-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: var(--shadow-hover);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .login-logo .logo-icon {
+      width: 52px; height: 52px;
+      background: var(--orange);
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin: 0 auto 12px;
+      box-shadow: var(--shadow-orange);
+    }
+
+    .login-logo h1 {
+      font-size: 26px;
+      color: var(--text-primary);
+    }
+
+    .login-logo p {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .login-form .input-group input {
+      font-size: 16px;
+      padding: 14px;
+      height: 52px;
+    }
+
+    .login-form .btn {
+      height: 52px;
+      font-size: 16px;
+      margin-top: 4px;
+    }
+
+    #login-error {
+      background: rgba(255,71,87,0.12);
+      border: 1px solid rgba(255,71,87,0.3);
+      border-radius: var(--radius-sm);
+      color: #FF4757;
+      padding: 10px 14px;
+      font-size: 14px;
+      display: none;
+    }
+
+    /* ADMIN PANEL */
+    #admin-panel { display: none; }
+
+    /* Top Bar */
+    .admin-topbar {
+      background: var(--bg-dark);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .admin-topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .admin-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--text-primary);
+    }
+
+    .admin-logo span { color: var(--orange); }
+
+    .admin-badge {
+      background: var(--orange-dim);
+      border: 1px solid rgba(255,107,0,0.3);
+      color: var(--orange);
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 100px;
+    }
+
+    .admin-topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .admin-user {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Content Layout */
+    .admin-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 24px;
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* Form Panel */
+    .form-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      position: sticky;
+      top: 88px;
+    }
+
+    .form-panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .form-panel-title h2 {
+      font-size: 20px;
+      color: var(--text-primary);
+    }
+
+    .btn-cancel-edit {
+      font-size: 12px;
+      padding: 6px 14px;
+      display: none;
+    }
+
+    #moto-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    #moto-form .input-group input,
+    #moto-form .input-group select {
+      height: 48px;
+      font-size: 15px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* Upload de Foto */
+    .file-upload-area {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .file-upload-area:hover,
+    .file-upload-area.drag-over {
+      border-color: var(--orange);
+      background: var(--orange-dim);
+    }
+
+    .file-upload-area input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .upload-icon { font-size: 28px; margin-bottom: 8px; }
+
+    .upload-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .upload-text strong { color: var(--orange); }
+
+    #photo-preview {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      margin-top: 12px;
+      display: none;
+      border: 1px solid var(--border);
+    }
+
+    /* Upload progress */
+    .upload-progress {
+      display: none;
+      margin-top: 10px;
+    }
+
+    .progress-bar-track {
+      background: var(--border);
+      border-radius: 4px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--orange);
+      border-radius: 4px;
+      transition: width 0.2s;
+      width: 0%;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* List Panel */
+    .list-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .list-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .list-header h2 {
+      font-size: 20px;
+      color: var(--text-primary);
+    }
+
+    .list-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .list-search input {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      padding: 8px 14px;
+      font-size: 14px;
+      width: 220px;
+      height: 38px;
+    }
+
+    /* Tabela */
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    thead {
+      background: var(--bg-dark);
+    }
+
+    th {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 12px 16px;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    tbody tr {
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover { background: var(--bg-card-hover); }
+
+    .table-thumb {
+      width: 54px;
+      height: 36px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-dark);
+      display: block;
+    }
+
+    .table-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 15px;
+    }
+
+    .table-store-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.05);
+      color: var(--text-secondary);
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .btn-edit {
+      background: rgba(255,107,0,0.12);
+      color: var(--orange);
+      border: 1px solid rgba(255,107,0,0.3);
+      border-radius: var(--radius-sm);
+      padding: 7px 14px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-edit:hover {
+      background: var(--orange-dim);
+      box-shadow: 0 0 12px var(--orange-glow);
+    }
+
+    .btn-delete {
+      background: rgba(192,57,43,0.1);
+      color: #E74C3C;
+      border: 1px solid rgba(192,57,43,0.25);
+      border-radius: var(--radius-sm);
+      padding: 7px 14px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-delete:hover {
+      background: rgba(192,57,43,0.2);
+    }
+
+    /* Empty State Tabela */
+    .table-empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .table-empty .icon { font-size: 40px; margin-bottom: 12px; }
+
+    /* Responsivo Admin */
+    @media (max-width: 1024px) {
+      .admin-content {
+        grid-template-columns: 1fr;
+      }
+      .form-panel { position: static; }
+    }
+
+    @media (max-width: 640px) {
+      .admin-content { padding: 16px; }
+      .form-panel { padding: 20px; }
+      .form-row { grid-template-columns: 1fr; }
+      .admin-topbar { padding: 0 16px; }
+      .admin-user { display: none; }
+      .list-search input { width: 160px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div id="login-screen">
+    <div class="login-box">
+      <div class="login-logo">
+        <div class="logo-icon">🏍</div>
+        <h1>MotoShop <span style="color:var(--orange)">Admin</span></h1>
+        <p>Painel de Administração</p>
+      </div>
+      <form class="login-form" id="login-form" novalidate>
+        <div id="login-error" role="alert"></div>
+        <div class="input-group">
+          <label for="login-email">E-mail</label>
+          <input type="email" id="login-email" placeholder="admin@motoshop.com" autocomplete="username" required />
+        </div>
+        <div class="input-group">
+          <label for="login-password">Senha</label>
+          <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="btn btn-primary" id="btn-login">Entrar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- PAINEL ADMIN -->
+  <div id="admin-panel">
+
+    <!-- Top Bar -->
+    <header class="admin-topbar">
+      <div class="admin-topbar-left">
+        <div class="admin-logo">🏍 Moto<span>Shop</span></div>
+        <span class="admin-badge">Admin</span>
+      </div>
+      <div class="admin-topbar-right">
+        <span class="admin-user" id="admin-user-email"></span>
+        <a href="index.html" target="_blank" class="btn btn-ghost" style="height:36px;font-size:13px;padding:0 14px">Ver Site</a>
+        <button class="btn btn-ghost" id="btn-logout" style="height:36px;font-size:13px;padding:0 14px">Sair</button>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="admin-content">
+
+      <!-- Formulário -->
+      <aside class="form-panel">
+        <div class="form-panel-title">
+          <h2 id="form-title">Nova Moto</h2>
+          <button class="btn btn-ghost btn-cancel-edit" id="btn-cancel-edit">✕ Cancelar</button>
+        </div>
+
+        <form id="moto-form" novalidate>
+          <input type="hidden" id="edit-id" />
+
+          <div class="input-group">
+            <label for="f-name">Nome da moto *</label>
+            <input type="text" id="f-name" placeholder="Ex: CB 500 F" required />
+          </div>
+
+          <div class="form-row">
+            <div class="input-group">
+              <label for="f-brand">Marca *</label>
+              <select id="f-brand" required>
+                <option value="">Selecione</option>
+                <option>Honda</option>
+                <option>Yamaha</option>
+                <option>Kawasaki</option>
+                <option>Suzuki</option>
+                <option>BMW</option>
+                <option>Ducati</option>
+                <option>Harley-Davidson</option>
+                <option>Dafra</option>
+                <option>Shineray</option>
+                <option>Traxx</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label for="f-store">Loja *</label>
+              <select id="f-store" required>
+                <option value="">Selecione</option>
+                <option>Moto Shop A</option>
+                <option>Moto Shop B</option>
+                <option>Moto Shop C</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="input-group">
+              <label for="f-year">Ano *</label>
+              <input type="number" id="f-year" placeholder="2024" min="2000" max="2026" required />
+            </div>
+            <div class="input-group">
+              <label for="f-km">Quilometragem *</label>
+              <input type="number" id="f-km" placeholder="0" min="0" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="input-group">
+              <label for="f-price">Preço (R$) *</label>
+              <input type="number" id="f-price" placeholder="18500" min="0" step="100" required />
+            </div>
+            <div class="input-group">
+              <label for="f-cc">Cilindrada (cc)</label>
+              <input type="number" id="f-cc" placeholder="160" min="50" max="2500" />
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="f-color">Cor</label>
+            <input type="text" id="f-color" placeholder="Ex: Azul Fosco, Vermelho Pérola" />
+          </div>
+
+          <!-- URL da Foto -->
+          <div class="input-group">
+            <label for="f-photo-url">URL da foto</label>
+            <input
+              type="url"
+              id="f-photo-url"
+              placeholder="https://exemplo.com/foto-da-moto.jpg"
+              style="height:48px;font-size:15px"
+            />
+            <p style="font-size:12px;color:var(--text-muted);margin-top:4px">
+              Cole o link direto de uma imagem (Google Drive¹, Imgur, etc.)
+              <br><span style="font-size:11px">¹ No Google Drive: clique com botão direito → "Obter link" → altere para "Qualquer pessoa com o link" → use o link direto.</span>
+            </p>
+            <img id="photo-preview" src="" alt="Preview da foto" style="width:100%;height:160px;object-fit:cover;border-radius:8px;margin-top:10px;display:none;border:1px solid var(--border)" />
+          </div>
+
+          <button type="submit" class="btn btn-primary w-full" id="btn-save" style="height:50px;font-size:16px;margin-top:4px">
+            Cadastrar Moto
+          </button>
+        </form>
+      </aside>
+
+      <!-- Lista -->
+      <main class="list-panel">
+        <div class="list-header">
+          <h2>Motos Cadastradas <span id="total-badge" style="color:var(--text-muted);font-size:16px;font-weight:400"></span></h2>
+          <div class="list-search">
+            <input type="text" id="admin-search" placeholder="Buscar moto..." aria-label="Buscar moto" />
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Foto</th>
+                <th>Nome</th>
+                <th>Marca</th>
+                <th>Ano</th>
+                <th>Preço</th>
+                <th>KM</th>
+                <th>Loja</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="motos-tbody">
+              <tr>
+                <td colspan="8">
+                  <div class="table-empty">
+                    <div class="icon">⏳</div>
+                    <p>Carregando...</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+    </div><!-- /.admin-content -->
+  </div><!-- /#admin-panel -->
+
+  <!-- Modal de Confirmação -->
+  <div class="modal-overlay" id="confirm-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-box">
+      <h3 id="modal-title">Excluir moto?</h3>
+      <p>Essa ação não pode ser desfeita. A moto e sua foto serão removidas permanentemente.</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="modal-cancel">Cancelar</button>
+        <button class="btn btn-danger" id="modal-confirm">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" role="region" aria-live="polite"></div>
+
+  <script src="firebase.config.js"></script>
+  <script src="script.js"></script>
+  <script>
+    if (typeof initAdminPage === 'function') initAdminPage();
+  </script>
+</body>
+</html>
