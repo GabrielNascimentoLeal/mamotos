@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Encontre sua moto ideal nas melhores lojas. Motos seminovas e 0km com os melhores preços." />
   <title>MotoShop — As Melhores Motos</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
 
   <!-- Firebase SDK v9 Compat (CDN) -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -66,6 +67,13 @@
     }
 
     .logo-text span { color: var(--orange); }
+
+    .header-logo {
+      height: 48px;
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 0 4px rgba(0,0,0,0.6));
+    }
 
     .stores-nav {
       display: flex;
@@ -653,14 +661,15 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="logo">
-        <div class="logo-icon">🏍</div>
-        <div class="logo-text">Moto<span>Shop</span></div>
+        <img src="logo-ma-motos.png" alt="MA Motos" class="header-logo" />
+        <img src="logo-duarte-motos.png" alt="Duarte Motos" class="header-logo" />
+        <img src="logo-big-motos.png" alt="Big Motos BH" class="header-logo" />
       </div>
       <nav class="stores-nav" aria-label="Lojas">
         <button class="store-pill active" data-store="">Todas as Lojas</button>
-        <button class="store-pill" data-store="Moto Shop A">Moto Shop A</button>
-        <button class="store-pill" data-store="Moto Shop B">Moto Shop B</button>
-        <button class="store-pill" data-store="Moto Shop C">Moto Shop C</button>
+        <button class="store-pill" data-store="MA MOTOS">MA MOTOS</button>
+        <button class="store-pill" data-store="DUARTE MOTOS">DUARTE MOTOS</button>
+        <button class="store-pill" data-store="BIG MOTOS">BIG MOTOS</button>
       </nav>
     </div>
   </header>
@@ -680,9 +689,9 @@
         <label for="filter-store">Loja</label>
         <select id="filter-store">
           <option value="">Todas as lojas</option>
-          <option value="Moto Shop A">Moto Shop A</option>
-          <option value="Moto Shop B">Moto Shop B</option>
-          <option value="Moto Shop C">Moto Shop C</option>
+          <option value="MA MOTOS">MA MOTOS</option>
+          <option value="DUARTE MOTOS">DUARTE MOTOS</option>
+          <option value="BIG MOTOS">BIG MOTOS</option>
         </select>
       </div>
 
@@ -763,7 +772,7 @@
   <div id="toast-container" role="region" aria-live="polite" aria-label="Notificações"></div>
 
   <footer>
-    <p>© 2026 <strong>MotoShop</strong> — Moto Shop A · Moto Shop B · Moto Shop C</p>
+    <p>© 2026 <strong>MA MOTOS · DUARTE MOTOS · BIG MOTOS</strong></p>
     <p style="margin-top:6px">Seu próximo veículo está aqui.</p>
   </footer>
 
