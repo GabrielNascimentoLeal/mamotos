@@ -59,7 +59,7 @@ function checkFirebaseConfig() {
 
 function initFirebase() {
   if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
-  return { db: firebase.firestore(), auth: firebase.auth() };
+  return { db: firebase.firestore(), auth: firebase.auth(), storage: firebase.storage() };
 }
 
 // ════════════════════════════════════════════════════════════
@@ -271,7 +271,7 @@ function initClientPage() {
 
 function initAdminPage() {
   if (!checkFirebaseConfig()) { window.location.href = 'index.html'; return; }
-  const { db, auth } = initFirebase();
+  const { db, auth, storage } = initFirebase();
 
   const loginScreen   = document.getElementById('login-screen');
   const adminPanel    = document.getElementById('admin-panel');
@@ -291,18 +291,19 @@ function initAdminPage() {
   const confirmModal  = document.getElementById('confirm-modal');
   const modalCancel   = document.getElementById('modal-cancel');
   const modalConfirm  = document.getElementById('modal-confirm');
-  const photoPreview  = document.getElementById('photo-preview');
-  const photoUrlInput = document.getElementById('f-photo-url');
+  const photoPreview   = document.getElementById('photo-preview');
+  const photoFileInput = document.getElementById('f-photo-file');
+  const fileUploadText = document.getElementById('file-upload-text');
 
-  let allMotos = [], pendingDeleteId = null, unsubscribeMotos = null;
+  let allMotos = [], pendingDeleteId = null, unsubscribeMotos = null, currentPhotoUrl = '';
 
-  // Preview ao digitar URL
-  photoUrlInput?.addEventListener('input', () => {
-    const url = photoUrlInput.value.trim();
-    if (photoPreview) {
-      photoPreview.src = url || '';
-      photoPreview.style.display = url ? 'block' : 'none';
-      photoPreview.onerror = () => { photoPreview.style.display = 'none'; };
+  // Preview ao selecionar arquivo
+  photoFileInput?.addEventListener('change', () => {
+    const file = photoFileInput.files[0];
+    if (file && photoPreview) {
+      photoPreview.src = URL.createObjectURL(file);
+      photoPreview.style.display = 'block';
+      fileUploadText.textContent = file.name;
     }
   });
 
@@ -395,13 +396,18 @@ function initAdminPage() {
     const year  = parseInt(document.getElementById('f-year').value);
     const km    = parseInt(document.getElementById('f-km').value);
     const price = parseFloat(document.getElementById('f-price').value);
-    const url   = photoUrlInput?.value.trim() || '';
-
     if (!name || !brand || !store || !year || isNaN(km) || isNaN(price)) {
       showToast('Preencha todos os campos obrigatórios.', 'error'); return;
     }
     setSaveLoading(true);
     try {
+      let url = currentPhotoUrl;
+      const file = photoFileInput?.files[0];
+      if (file) {
+        const ref = storage.ref(`motos/${Date.now()}_${file.name}`);
+        await ref.put(file);
+        url = await ref.getDownloadURL();
+      }
       const cc    = parseInt(document.getElementById('f-cc').value) || null;
       const color = document.getElementById('f-color').value.trim() || null;
       const data  = { nome: name, marca: brand, loja: store, ano: year, km, preco: price, fotoUrl: url, cilindrada: cc, cor: color };
@@ -431,8 +437,12 @@ function initAdminPage() {
     document.getElementById('f-km').value    = m.km    ?? 0;
     document.getElementById('f-price').value = m.preco      || '';
     document.getElementById('f-cc').value    = m.cilindrada || '';
-    document.getElementById('f-color').value = m.cor        || '';
-    if (photoUrlInput) photoUrlInput.value   = m.fotoUrl    || '';
+    document.getElementById('f-color').value = m.cor || '';
+    currentPhotoUrl = m.fotoUrl || '';
+    if (photoPreview && m.fotoUrl) {
+      photoPreview.src = m.fotoUrl;
+      photoPreview.style.display = 'block';
+    }
 
     // Selects precisam de um tick para atualizar após reset()
     setTimeout(() => {
@@ -466,6 +476,9 @@ function initAdminPage() {
     formTitle.textContent = 'Nova Moto'; btnSave.textContent = 'Cadastrar Moto';
     btnCancelEdit.style.display = 'none';
     if (photoPreview) { photoPreview.src = ''; photoPreview.style.display = 'none'; }
+    if (photoFileInput) photoFileInput.value = '';
+    if (fileUploadText) fileUploadText.textContent = 'Clique para escolher uma imagem';
+    currentPhotoUrl = '';
   }
 
   function setSaveLoading(l) {

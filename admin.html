@@ -581,19 +581,13 @@
             <input type="text" id="f-color" placeholder="Ex: Azul Fosco, Vermelho Pérola" />
           </div>
 
-          <!-- URL da Foto -->
+          <!-- Upload da Foto -->
           <div class="input-group">
-            <label for="f-photo-url">URL da foto</label>
-            <input
-              type="url"
-              id="f-photo-url"
-              placeholder="https://exemplo.com/foto-da-moto.jpg"
-              style="height:48px;font-size:15px"
-            />
-            <p style="font-size:12px;color:var(--text-muted);margin-top:4px">
-              Cole o link direto de uma imagem (Google Drive¹, Imgur, etc.)
-              <br><span style="font-size:11px">¹ No Google Drive: clique com botão direito → "Obter link" → altere para "Qualquer pessoa com o link" → use o link direto.</span>
-            </p>
+            <label>Foto da moto</label>
+            <label for="f-photo-file" class="file-upload-area" id="file-upload-label">
+              <span id="file-upload-text">Clique para escolher uma imagem</span>
+              <input type="file" id="f-photo-file" accept="image/jpeg,image/png,image/webp" style="display:none" />
+            </label>
             <img id="photo-preview" src="" alt="Preview da foto" style="width:100%;height:160px;object-fit:cover;border-radius:8px;margin-top:10px;display:none;border:1px solid var(--border)" />
           </div>
 
