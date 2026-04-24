@@ -1,3 +1,13 @@
+/* ── Botão Admin ── */
+.btn-admin {
+  font-size: 18px;
+  opacity: 0.35;
+  text-decoration: none;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+.btn-admin:hover { opacity: 1; }
+
 /* ============================================================
    MOTO SHOP — GLOBAL STYLES
    Tema: Industrial Dark com destaque laranja
